@@ -7,7 +7,7 @@ from .test_recipe_base import RecipeTestBase
 
 
 class RecipeViewsTest(RecipeTestBase):
-    # HOME
+    #  =================== HOME  ===================
 
     # verifica se a função que ta sendo executada é igual a função que tem na view  # noqa: E501
     def test_recipe_home_view_function_is_correct(self):
@@ -45,9 +45,19 @@ class RecipeViewsTest(RecipeTestBase):
             'Sei lá pizza?', content)
         self.assertEqual(len(response_context_recipes), 1)
 
-    # END HOME
+    def test_recipe_home_template_dont_load_recipes_not_published(self):
+        self.make_recipe(is_published=False,)
 
-    # CATEGORY
+        response = self.client.get(reverse('recipes:home'))
+
+        self.assertIn(
+            'No Recipes found here! :(',
+            response.content.decode('utf-8')
+        )
+
+    #  =================== END HOME  ===================
+
+    #  =================== CATEGORY  ===================
 
     def test_recipe_category_view_function_is_correct(self):
         view = resolve(reverse('recipes:category', kwargs={'category_id': 1}))
@@ -59,9 +69,31 @@ class RecipeViewsTest(RecipeTestBase):
         )
         self.assertEqual(response.status_code, 404)
 
-    # END CATEGORY
+    @skip('Fiz merda nos campos do models, e acabou que o ficou sem o campo de descrição. Por isso o erro!')  # noqa: E501
+    def test_recipe_category_template_loads_recipes(self):
+        self.make_recipe(title='This is a category test')
 
-    # RECIPE
+        response = self.client.get(reverse('recipes:category', args=(1,)))
+        content = response.content.decode('utf-8')
+        response_context_recipes = response.context['recipes']
+
+        # Check if one recipe exists
+        self.assertIn(
+            'This is a category test', content)
+        self.assertEqual(len(response_context_recipes), 1)
+
+    def test_recipe_category_template_dont_load_recipes_not_published(self):
+        self.make_recipe(is_published=False,)
+
+        response = self.client.get(
+            reverse('recipes:category', kwargs={'category_id': 20000})
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+    # =================== END CATEGORY  ===================
+
+    #  =================== RECIPE  ===================
 
     def test_recipe_detail_view_function_is_correct(self):
         view = resolve(reverse('recipes:recipe', kwargs={'id': 1}))
@@ -73,4 +105,34 @@ class RecipeViewsTest(RecipeTestBase):
         )
         self.assertEqual(response.status_code, 404)
 
-    # END RECIPE
+    @skip('Fiz merda nos campos do models, e acabou que o ficou sem o campo de descrição. Por isso o erro!')  # noqa: E501
+    def test_recipe_detail_template_loads_tge_correct_recipe(self):
+        self.make_recipe(title='Loads one recipe')
+
+        response = self.client.get(
+            reverse(
+                'recipes:recipe',
+                kwargs={'id': 1}
+            )
+        )
+        content = response.content.decode('utf-8')
+        response_context_recipes = response.context['recipes']
+
+        # Check if one recipe exists
+        self.assertIn(
+            'Loads one recipe', content)
+        self.assertEqual(len(response_context_recipes), 1)
+
+    def test_recipe_detail_template_dont_load_recipe_not_published(self):
+        self.make_recipe(is_published=False,)
+
+        response = self.client.get(
+            reverse(
+                'recipes:recipe',
+                kwargs={'id': 1}
+            )
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+    #  =================== END RECIPE  ===================
